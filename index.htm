@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Busicom 141-PF Emulator</title>
+    <style>
+    .monospace {
+      font-family: monaco,monospace;
+    }
+    .monospace button {
+      font-family: monaco,monospace;
+    }
+    
+    td { text-align: center; white-space: nowrap; }
+    th { white-space: nowrap; }
+    button { font-size: 30px; border-radius: 25px; width: 50px; height:50px }
+
+    table#printer {
+      position: relative;
+      top:-40px;
+      user-select: none
+    }
+    th { user-select: none }
+      
+    table#printer td, table#paper td {
+      font-size:30px;
+      height: 36px;
+    }
+    
+    table#printer td {
+      opacity: 0.1
+    }
+    
+    .red {
+      color: red;
+    }
+    
+    #plus {
+      height:100px;
+    }
+    
+    #equals {
+      width:100px;
+    }
+    
+    #advance_printer {
+      height: 40px; width: 40px; font-size:12px;
+    }
+    
+    #sign {
+      font-size:18px;
+    }
+
+    #exchange {
+      font-size:12px;
+    }
+    
+    #digits {
+      margin:0;
+    }
+    
+    table#keyboard {
+      user-select: none;
+    }
+    
+    table#paper td, table#printer td {
+      width:16px;
+    }
+    table {
+      table-layout: fixed;
+    }
+    table#paper, table#printer {
+      width: 362px;
+    }
+    
+    .led {
+      border-radius: 5px
+    }
+    
+    .red {
+      color: red;
+    }
+    </style>
+    <script type="module">
+    // Import our outputted wasm ES6 module
+    // Which, export default's, an initialization function
+    import init from "./pkg/busicom.js";
+//    const runWasm = async () => {
+      // Instantiate our wasm module
+    const wasm = await init("./pkg/busicom_bg.wasm");
+    wasm.run();
+    </script>
+    
+    <script>
+    pendingClicks = [];
+    //Map out all of the button clicks.
+    window.addEventListener("load", function() {
+      const keyboard = document.getElementById("keyboard");
+      const tbody = keyboard.children[0];
+      for(let i = 0; i < tbody.children.length; i++) {
+        const tr = tbody.children[i];
+        for(let j = 0; j < tr.children.length; j++) {
+          const td = tr.children[j];
+          const button = td.children[0];
+          if(button) {
+            button.addEventListener("click", function(e) {
+              pendingClicks.push(parseInt(button.getAttribute('code')));
+            });
+          }
+        }
+      }
+      
+      document.getElementById("digits_label").value=document.getElementById("digits").value;
+      
+    }, false);
+
+    //This function will be called by the WASM code.
+    function getPendingClick() {
+      let pending = pendingClicks.shift();
+      if(pending) {
+        return pending;
+      }
+    }
+    </script>
+  </head>
+  <body>
+  <div style="display: flex">
+    <aside class="monospace">
+    <table id="ram">
+      <tr><th>RAM 0</th><th> </th><th colspan=16>Characters</th><th></th><th colspan=4>Status</th>
+      <tr><th>          </th><td style="width:5px"> </td><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th style="width:5px"></th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+      <tr><th>Register 0</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>Register 1</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>Register 2</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>Register 3</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th style="height:15px"></th></tr>
+      <tr><th>RAM 1</th><th> </th><th colspan=16>Characters</th><th></th><th colspan=4>Status</th>
+      <tr><th>          </th><td style="width:5px"> </td><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th style="width:5px"></th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+      <tr><th>Register 0</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>Register 1</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>Register 2</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>Register 3</th><td> </td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+    </table>
+    <div style="height:15px"></div>
+    <table id="ports">
+      <tr><th style="width:60px">IO</th><th style="width:20px">0</th><th style="width:20px">1</th><th style="width:20px">2</th><th style="width:20px">3</th></tr>
+      <tr><th>ROM 0</th><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>ROM 1</th><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>ROM 2</th><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>ROM 3</th><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>ROM 4</th><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>RAM 0</th><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>RAM 1</th><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+    </table>
+    <div style="height:15px"></div>
+    <table id="shifts">
+      <tr><th style="width:80px">Shifters</th><th style="width:20px">0</th><th style="width:20px">1</th><th style="width:20px">2</th><th style="width:20px">3</th><th style="width:20px">4</th><th style="width:20px">5</th><th style="width:20px">6</th><th style="width:20px">7</th><th style="width:20px">8</th><th style="width:20px">9</th></tr>
+      <tr><th>Shift 0</th><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>Shift 1</th><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+      <tr><th>Shift 2</th><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr>
+    </table>
+    </aside>
+    <article style="flex: 1; display:flex; flex-direction: column; align-items: center" class="monospace">
+      <div style="height:284px">
+        <table id="paper">
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+        </table>
+        <table id="printer">
+          <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
+        </table>
+      </div>
+      <div style="font-size:24px; user-select: none">BUSICOM 141-PF</div>
+      <div>
+        <table id="keyboard">
+          <tr><td><button code="1" id="advance_printer">Move<br>Up</button></td><td style="width:20px"></td><td colspan=3><form oninput="result.value=digits.value"><input type="range" id="digits" min="0" max="8" value=0 id="digits"></br><output name="result" for="digits" id="digits_label">0</output> decimal points</form></td><td></td><td colspan=2><label><input type="radio" name="rounding" id="truncate">Truncate</label><br/><label><input type="radio" name="rounding" checked id="float">Float</label><br/><label><input type="radio" name="rounding" id="round">Round</label></td><td></td><td colspan=2><div class="led" id="overflow_led">Overflow</div><div class="led" id="negative_led">Negative</div><div class="led" id="memory_led">Memory</div></td></tr>
+          <tr><td><button code="157" class="red" id="sign">Sign</button></td><td></td><td><button code="153">7</button></td><td><button code="149">8</button></td><td><button code="145">9</button></td><td style="width:20px"></td><td><button code="141">-</button></td><td><button code="137">◇</button></td><td style="width:20px"></td><td><button code="133">√</button></td><td><button code="129">CM</button></td></tr>
+          <tr><td><button code="158" id="exchange">Ex<br/>change</button></td><td></td><td><button code="154">4</button></td><td><button code="150">5</button></td><td><button code="146">6</button></td><td></td><td rowspan=2><button code="142" id="plus">+</button></td><td><button code="138">÷</button></td><td></td><td><button code="134">%</button></td><td><button code="130">RM</button></td></tr>
+          <tr><td><button code="159">CE</button></td><td></td><td><button code="155">1</button></td><td><button code="151">2</button></td><td><button code="147">3</button></td><td></td><td><button code="139">×</button></td><td> </td><td><button code="135" class="red">M&#8791;</button></td><td><button code="131" class="red">M-</button></td></tr>
+          <tr><td><button code="160">C</button></td><td></td><td><button code="156">0</button></td><td><button code="152">00</button></td><td><button code="148">.</button></td><td></td><td colspan=2><button code="140" id="equals">=</button></td><td></td><td><button code="136">M&#x2A72;</button></td><td><button code="132">M+</button></td></tr>
+        </table>
+      </div>
+    </article>
+    <aside style="flex: 1">
+      <h4>How to use</h4>
+      <ol>
+        <li>Start out by typing a few numbers. They won't appear right away. Instead they will only appear after you type in a math operation. Example: <span class="monospace">1 2 3 +</span></li>
+        <li>Type in a few more numbers, and remember to type the <span>+</span> afterward: <span class="monospace">4 5 6 +</span></li>
+        <li>Press <span class="monospace">=</span></li>
+      </ol>
+      Experiment with different buttons and see what they do.
+
+      <h4>What is this?</h4>
+      This is an emulation of the <a href="http://www.vintagecalculators.com/html/busicom_141-pf.html">Busicom 141-PF</a>, the world's first calculator to run on a CPU, with the world's first single chip CPU, the <a href="https://en.wikipedia.org/wiki/Intel_4004">Intel 4004</a>.
+      Alongside the CPU there are 2 RAM chips, 5 ROM chips, 3 shift register chips, a keyboard and a printer being emulated with perfect synchronization.
+
+      <h4>Why are there numbers rapidly switching?</h4>
+
+      The calculator didn't have a display. Instead it had the Shinshu Seiki 102 line printer. The way the printer worked is by rapidly rotating all possible printable characters nonstop. When it was time to print, the calculator would hammer to hit exactly when the right characters came up. <a href="http://8bitforce.com/img/retroshield4004/slides/k4004s_slide30.jpg">View Diagram</a>
+
+      <h4>Source code</h4>
+
+      It is my dream to build a chip library for anyone to be able to emulate any chip or board. Therefore, the code is subdivided into several layers of emulation:<br />
+      
+      <ul>
+        <li>GUI: [GUI link]</li>
+        <li>Boards: [Boards link]</li>
+        <li>Chips: [Chips link]</li>
+      </ul>
+      Want me to emulate something else? I will be happy to consider it if you could provide me with ROM data. I am interested in most chips built before 1980. It doesn't have to be a CPU either. Shift registers and multiplexers are welcome. Start a discussion in the Chips github repository.
+
+      <h4>Acknowledgments / Resources</h4>
+      This emulation would be lacking without the resources below:<br />
+      <ul>
+        <li><a href="https://pyntel4004.readthedocs.io/en/latest/intro/opcodes.html">Documentation of the 4004 instruction set</a></li>
+        <li><a href="http://e4004.szyc.org/">Emulator compiler and decompiler of the 4004</a></li>
+        <li><a href="https://4004.com/2009/Busicom-141PF-Calculator_asm_rel-1-0-1.txt">Disassembled sourcecode of the Busicom 141-PF</a></li>
+        <li><a href="https://archive.org/details/manualzilla-id-7026262">Intel MCS-4 User Manual</li>
+        <li><a href="https://archive.org/details/Unicom141PManual">Unicom 141 User Manual</a></li>
+      </ul>
+    </aside>
+  </div>
+  
+  </body>
+</html>
