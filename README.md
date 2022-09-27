@@ -8,9 +8,9 @@ A very important aspect is that web browsers have poor timing. The shortest amou
 
 As a consequence, I am forced to break up the emulation into time chunks. Sleep for 10-20 milliseconds, then run several thousand CPU cycles. Then sleep again.
 
-The emulated chips are completely unaware that they are run in this "run - sleep - run - sleep" mode.
+The emulated chips are completely unaware that they are run in this "run thousands of instructions and sleep" cycle.
 
-With a refresh rate of 60 hz, that is 16 millseconds of sleep. The user is completely unaware of the chips in this "run - sleep - run - sleep" mode.
+With a refresh rate of 60 hz, that is 16 millseconds of sleep. The user is completely unaware of the chips in this "run thousands of instructions and sleep" cycle.
 
 Since peripherals need to interact with the GUI and with the chips, I have broken up the peripheral cycles into two methods: `run_cycle` and `run_sleep_cycle`.
 
