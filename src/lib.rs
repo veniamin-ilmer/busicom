@@ -33,48 +33,29 @@ pub async fn run() {
   let mut printer = printer::Printer::new();
 
   let window = web_sys::window().unwrap();
-  let mobile = window.match_media("(hover: none)").unwrap().unwrap().matches();
-  let sleep_time = if mobile {
-    16 * 16 //4 hz refresh
-  } else {
-    16  //60 hz refresh
-  };
 
-
+  //Getting the current time is actually an expensive operation in web browsers, so I only do it in the refresh cycle.
+  let mut previous_duration = instant::Duration::new(0, 11_000);  //11 microseconds
+  
   loop {
     let start_time = instant::Instant::now();
-    sleep(&window, sleep_time).await;  //The printer flips every 28 ms, however we need to signal the processor that it was switched, on / off, so we run at 16 ms, so switch on and off.
-    let mut actual_cycles = 0;
-    let duration = instant::Instant::now() - start_time;
-    let calculated_cycles = duration.as_nanos() / 10_800; //cpu runs at 10.3 microseconds per opcode. Each cycle is 8 clock ticks at 740 khz.
-    loop {
-//      let calculated_cycles = duration.as_millis() / 16; //Slowest speed.. ~60Hz
-//      let calculated_cycles = 1;
-      if actual_cycles >= calculated_cycles {
-        break;
-      }
+    sleep(&window, 16).await;  //The printer flips every 28 ms, however we need to signal the processor that it was switched, on / off, so we run at 16 ms, so switch on and off.
+    let cycles = previous_duration.as_nanos() / 10_800; //cpu runs at 10.3 microseconds per opcode. Each cycle is 8 clock ticks at 740 khz.
+    for _ in 0..cycles {
       board.run_cycle();
       keyboard.run_cycle(&mut board);
       printer.run_cycle(&mut board);
-      actual_cycles += 1;
     }
     
     keyboard.run_sleep_cycle(&mut board);
     printer.run_sleep_cycle(&mut board);
 
-    //Run a few more times, since we are sleeping longer
-    if mobile {
-      for _ in 0..15 {
-        keyboard.run_sleep_cycle(&mut board);
-        printer.run_sleep_cycle(&mut board);
-      }
-    }
+    side_panel::print_memory(&board);
+    side_panel::print_ports(&board);
+    side_panel::print_shifts(&board);
     
-    if !mobile {
-      side_panel::print_memory(&board);
-      side_panel::print_ports(&board);
-      side_panel::print_shifts(&board);
-    }
+    //Getting the current time is actually an expensive operation in web browsers, so I only do it in the refresh cycle.
+    previous_duration = instant::Instant::now() - start_time;
   }
 }
 

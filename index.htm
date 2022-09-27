@@ -2,7 +2,8 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Busicom 141-PF Emulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.8"> 
+    <title>Busicom 141-PF Emulator - First calculator with a CPU from 1971</title>
     <style>
     .monospace {
       font-family: monaco,monospace;
@@ -80,14 +81,21 @@
     .red {
       color: red;
     }
+    
+    .desktoponly {display:display;}
+
+    @media only screen and (max-width: 900px) {
+    .desktoponly {display:none;}
+    .main_flex {flex-direction: column}
+    }
     </style>
     <script type="module">
     // Import our outputted wasm ES6 module
     // Which, export default's, an initialization function
-    import init from "./pkg/busicom.js";
+    import init from "./busicom.js";
 //    const runWasm = async () => {
       // Instantiate our wasm module
-    const wasm = await init("./pkg/busicom_bg.wasm");
+    const wasm = await init("./busicom_bg.wasm");
     wasm.run();
     </script>
     
@@ -110,6 +118,47 @@
         }
       }
       
+      document.onkeypress = function (e) {
+        e = e || window.event;
+        if(e.keyCode == 57) { //9
+          pendingClicks.push(145);
+        } else if(e.keyCode == 56) { //8
+          pendingClicks.push(149);
+        } else if(e.keyCode == 55) { //7
+          pendingClicks.push(153);
+        } else if(e.keyCode == 54) { //6
+          pendingClicks.push(146);
+        } else if(e.keyCode == 53) { //5
+          pendingClicks.push(150);
+        } else if(e.keyCode == 52) { //4
+          pendingClicks.push(154);
+        } else if(e.keyCode == 51) { //3
+          pendingClicks.push(147);
+        } else if(e.keyCode == 50 ) { //2
+          pendingClicks.push(151);
+        } else if(e.keyCode == 49) { //1
+          pendingClicks.push(155);
+        } else if(e.keyCode == 48) { //0
+          pendingClicks.push(156);
+        } else if(e.keyCode == 47) { //divide
+          pendingClicks.push(138); event.preventDefault(); return false;
+        } else if(e.keyCode == 45) { //-
+          pendingClicks.push(141);
+        } else if(e.keyCode == 61 | e.keyCode == 13) { //=
+          pendingClicks.push(140);
+        } else if(e.keyCode == 42) { //*
+          pendingClicks.push(139);
+        } else if(e.keyCode == 43) { //+
+          pendingClicks.push(142);
+        } else if(e.keyCode == 46) { //.
+          pendingClicks.push(148);
+        } else if(e.keyCode == 35) { //# for diamond
+          pendingClicks.push(137);
+        } else if(e.keyCode == 37) { //%
+          pendingClicks.push(134);
+        }
+      };
+      
       document.getElementById("digits_label").value=document.getElementById("digits").value;
       
     }, false);
@@ -124,8 +173,8 @@
     </script>
   </head>
   <body>
-  <div style="display: flex">
-    <aside class="monospace">
+  <div style="display: flex" class="main_flex">
+    <aside class="monospace desktoponly">
     <table id="ram">
       <tr><th>RAM 0</th><th> </th><th colspan=16>Characters</th><th></th><th colspan=4>Status</th>
       <tr><th>          </th><td style="width:5px"> </td><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th style="width:5px"></th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
@@ -160,9 +209,9 @@
       <tr><th>Shift 2</th><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr>
     </table>
     </aside>
-    <article style="flex: 1; display:flex; flex-direction: column; align-items: center" class="monospace">
-      <div style="height:284px">
-        <table id="paper">
+    <article style="flex: 1; display:flex; flex-direction: column; align-items: center; padding-right: 20px" class="monospace">
+      <div style="height:300px">
+        <table id="paper" style="height:300px">
           <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
           <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
           <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr>
