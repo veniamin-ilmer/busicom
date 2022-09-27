@@ -92,10 +92,10 @@
     <script type="module">
     // Import our outputted wasm ES6 module
     // Which, export default's, an initialization function
-    import init from "./busicom.js";
+    import init from "./pkg/busicom.js";
 //    const runWasm = async () => {
       // Instantiate our wasm module
-    const wasm = await init("./busicom_bg.wasm");
+    const wasm = await init("./pkg/busicom_bg.wasm");
     wasm.run();
     </script>
     
@@ -257,9 +257,9 @@
       It is my dream to build a chip library for anyone to be able to emulate any chip or board. Therefore, the code is subdivided into several layers of emulation:<br />
       
       <ul>
-        <li>GUI: [GUI link]</li>
-        <li>Boards: [Boards link]</li>
-        <li>Chips: [Chips link]</li>
+        <li><a href="https://github.com/veniamin-ilmer/busicom">Busicom GUI</a></li>
+        <li><a href="https://github.com/veniamin-ilmer/boards">Boards library</a></li>
+        <li><a href="https://github.com/veniamin-ilmer/chips">Chips library</a></li>
       </ul>
       Want me to emulate something else? I will be happy to consider it if you could provide me with ROM data. I am interested in most chips built before 1980. It doesn't have to be a CPU either. Shift registers and multiplexers are welcome. Start a discussion in the Chips github repository.
 
