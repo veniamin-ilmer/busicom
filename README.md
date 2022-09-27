@@ -11,3 +11,7 @@ As a consequence, I am forced to break up the emulation into time chunks. Sleep 
 The emulated chips are completely unaware that they are run in this "run - sleep - run - sleep" mode.
 
 With a refresh rate of 60 hz, that is 16 millseconds of sleep. The user is completely unaware of the chips in this "run - sleep - run - sleep" mode.
+
+Since peripherals need to interact with the GUI and with the chips, I have broken up the peripheral cycles into two methods: `run_cycle` and `run_sleep_cycle`.
+
+`run_cycle` methods run every cycle (Thousands per sleep). `run_sleep_cycle` methods run every refresh cycle. The slow gui stuff goes there.
