@@ -22,7 +22,6 @@ wasm-bindgen-futures = "0.4.33"
 version = "0.3.60"
 features = [
   'Window',
-  'MediaQueryList',
   'Document',
   'Element',
   'HtmlCollection',
@@ -31,3 +30,4 @@ features = [
 
 [profile.release]
 lto = true
+opt-level = 's'

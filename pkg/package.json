@@ -1,0 +1,12 @@
+{
+  "name": "busicom",
+  "version": "0.1.0",
+  "files": [
+    "busicom_bg.wasm",
+    "busicom.js",
+    "busicom.d.ts"
+  ],
+  "module": "busicom.js",
+  "types": "busicom.d.ts",
+  "sideEffects": false
+}

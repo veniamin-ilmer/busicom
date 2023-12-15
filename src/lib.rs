@@ -7,13 +7,10 @@ use wasm_bindgen::prelude::*;
 
 use boards::busicom141pf::Board;
 
-use instant;
-
 mod side_panel;
 mod keyboard;
 mod printer;
 
-/// ```
 /// Loop {
 ///   Sleep till the next screen refresh
 ///   Calculate how much instructions we should have run.
@@ -22,7 +19,6 @@ mod printer;
 ///   Run IO instructions which should only work on each refresh
 ///   Draw everything.
 /// }
-/// ```
 #[wasm_bindgen]
 pub async fn run() {
   std::panic::set_hook(Box::new(console_error_panic_hook::hook)); //Panics appear more descriptive in the browser console.
@@ -59,6 +55,7 @@ pub async fn run() {
   }
 }
 
+/// A trick to get browsers to "sleep" by awaiting a set_timeout
 async fn sleep(window: &web_sys::Window, ms: i32) {
   let promise = js_sys::Promise::new(&mut |resolve, _| {
     window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms).unwrap();
