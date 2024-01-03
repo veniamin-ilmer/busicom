@@ -1,5 +1,6 @@
-use arbitrary_int::{u2,u4};
+use arbitrary_int::u2;
 use boards::busicom141pf::Board;
+use chips::{Indexer16, Indexer64};
 
 pub(super) fn print_memory(board: &Board) {
   let tr_list = get_tr_list("ram");
@@ -10,24 +11,24 @@ pub(super) fn print_memory(board: &Board) {
       let td_list = tr_list.item(html_index).expect("can't get tr").children();
       print_register(
         &td_list,
-        board.i4002s[ram].read_character_array(u2::new(register_index)),
-        board.i4002s[ram].read_status_array(u2::new(register_index))
+        board.i4002s[ram].read_full_character(u2::new(register_index)),
+        board.i4002s[ram].read_full_status(u2::new(register_index))
       );
     }
   }
 }
 
-fn print_register(td_list: &web_sys::HtmlCollection, chars: [u4; 16], statuses: [u4; 4]) {
-  for character_index in 0..chars.len() {
+fn print_register(td_list: &web_sys::HtmlCollection, chars: Indexer64, statuses: Indexer16) {
+  for character_index in 0..16 {
     let html_index = character_index as u32 + 2;
     if let Some(td) = td_list.item(html_index) {
-      td.set_text_content(Some(&format!("{:X}", chars[character_index].value())));
+      td.set_text_content(Some(&format!("{:X}", chars.read_nibble(character_index).value())));
     }
   }
-  for status_index in 0..statuses.len() {
+  for status_index in 0..4 {
     let html_index = status_index as u32 + 19;
     if let Some(td) = td_list.item(html_index) {
-      td.set_text_content(Some(&format!("{:X}", statuses[status_index].value())));
+      td.set_text_content(Some(&format!("{:X}", statuses.read_nibble(status_index).value())));
     }
   }
 }

@@ -52,6 +52,7 @@ version = "0.1.0"
 dependencies = [
  "arbitrary-int",
  "boards",
+ "chips",
  "console_error_panic_hook",
  "instant",
  "js-sys",
@@ -359,9 +360,9 @@ dependencies = [
 
 [[package]]
 name = "web-sys"
-version = "0.3.60"
+version = "0.3.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcda906d8be16e728fd5adc5b729afad4e444e106ab28cd1c7256e54fa61510f"
+checksum = "50c24a44ec86bb68fbecd1b3efed7e85ea5621b39b35ef2766b66cd984f8010f"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
