@@ -1,6 +1,6 @@
 # Busicom 141-PF GUI
 
-You can see this gui live here - https://veniamin-ilmer.github.io/emu/busicom/
+You can see this gui live here - https://veniamin-ilmer.github.io/busicom/
 
 Building this GUI has been a completely different experience than building the chips supporting it.
 
