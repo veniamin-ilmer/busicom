@@ -76,7 +76,7 @@ pub(super) fn print_shifts(board: &Board) {
   }
 }
 
-fn print_line_shifts(td_list: &web_sys::HtmlCollection, bits: usize) {
+fn print_line_shifts(td_list: &web_sys::HtmlCollection, bits: u16) {
   for index in 0..10 {
     let html_index = (index + 1) as u32;
     if let Some(td) = td_list.item(html_index) {

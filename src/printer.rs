@@ -60,7 +60,7 @@ impl Printer {
     self.write_digits(td_list, 0b11111111111111111111);
   }
 
-  fn write_digits(&self, td_list: web_sys::HtmlCollection, bits: usize) {
+  fn write_digits(&self, td_list: web_sys::HtmlCollection, bits: u32) {
     let mut html_index = 0;
     for index in 3..=17 {
       if (bits >> index) & 1 == 1 {
@@ -120,7 +120,7 @@ impl Printer {
     self.red_color = false;
   }
 
-  fn hit_hammer(&self, bits: usize) {
+  fn hit_hammer(&self, bits: u32) {
     let table = self.html_document.get_element_by_id("paper").unwrap();
     let tbody = table.children().item(0).expect("can't get tbody");
     
