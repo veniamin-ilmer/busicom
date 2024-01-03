@@ -19,17 +19,19 @@ pub(super) fn print_memory(board: &Board) {
 }
 
 fn print_register(td_list: &web_sys::HtmlCollection, chars: Indexer64, statuses: Indexer16) {
-  for character_index in 0..16 {
-    let html_index = character_index as u32 + 2;
+  let mut html_index = 2;
+  for character_index in (0..16).rev() {
     if let Some(td) = td_list.item(html_index) {
       td.set_text_content(Some(&format!("{:X}", chars.read_nibble(character_index).value())));
     }
+    html_index += 1;
   }
-  for status_index in 0..4 {
-    let html_index = status_index as u32 + 19;
+  html_index = 19;
+  for status_index in (0..4).rev() {
     if let Some(td) = td_list.item(html_index) {
       td.set_text_content(Some(&format!("{:X}", statuses.read_nibble(status_index).value())));
     }
+    html_index += 1;
   }
 }
 
