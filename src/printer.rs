@@ -1,63 +1,77 @@
 use arbitrary_int::u4;
-use boards::busicom141pf::Board;
+use chips::mcs4;
+use chips::mcs4::shifter4003;
 
 pub(super) struct Printer {
   spin_count: usize,  //There are a total of 13 rotations. However, we need to signal the processor that it was switched, on / off, so we have 26 rotations, switching on and off.
   red_color: bool,
-  html_document: web_sys::Document,
+  printer_rows: web_sys::HtmlCollection,
+  paper_rows: web_sys::HtmlCollection,
+  advance_paper: bool,
+  hammering: bool,
 }
 
 impl Printer {
   pub(super) fn new() -> Self {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
+
+    
     Self {
       spin_count: 0,
       red_color: false,
-      html_document: document,
+      printer_rows: {
+        let table = document.get_element_by_id("printer").unwrap();
+        let tbody = table.children().item(0).expect("can't get tbody");
+        tbody.children()
+      },
+      paper_rows: {
+        let table = document.get_element_by_id("paper").unwrap();
+        let tbody = table.children().item(0).expect("can't get tbody");
+        tbody.children()
+      },
+      advance_paper: false,
+      hammering: false,
     }
   }
   
-  pub(super) fn run_sleep_cycle(&mut self, board: &mut Board) {
+  pub(super) fn run_sleep_cycle(&mut self, board: &mut mcs4::Board) {
     if self.spin_count % 2 == 1 {
-      board.i4004.set_test_flag(false);
+      board.cpu.set_test_flag(false);
     } else {
-      board.i4004.set_test_flag(true);
+      board.cpu.set_test_flag(true);
       self.spin_printer();
       
-      let mut rom_ports = board.i4001s[2].read_ports();
+      let mut rom_ports = board.roms[2].ports;
       if self.spin_count == 26 {
         rom_ports |= u4::new(0b1);  //Every full rotation of the printer, we set this to 1.
         self.spin_count = 0;
       } else {
         rom_ports &= u4::new(0b1110);
       }
-      board.i4001s[2].write_ports(rom_ports);
+      board.roms[2].ports = rom_ports;
     }
     self.spin_count += 1;
   }
   
-  pub(super) fn run_cycle(&mut self, board: &mut Board) {
-    if board.new_advance_paper_signal() {
+  pub(super) fn run_cycle(&mut self, board: &mcs4::Board, shifters: &[mcs4::shifter4003::Shifter]) {
+    let ram0_data = board.rams[0].ports;
+    if self.new_advance_paper_signal(ram0_data) {
       self.move_up_paper();
     }
-    if board.new_hammer_signal() {
-      self.hit_hammer(board.printer_shift_bits());
+    if self.new_hammer_signal(ram0_data) {
+      self.hit_hammer(printer_shift_bits(shifters));
     }
 
     //Red color change is per page, not per character. Once set, it can't be changed until you go to the next line.
-    let ram0 = board.i4002s[0].read_ports().value();
-    if ram0 & 0b1 == 0b1 {
+    if ram0_data.value() & 0b1 == 0b1 {
       self.red_color = true;
     }
   }
 
   fn spin_printer(&self) {
-    let table = self.html_document.get_element_by_id("printer").unwrap();
-    let tbody = table.children().item(0).expect("can't get tbody");
-
-    let td_list = tbody.children().item(0).expect("can't get tr").children();
-    self.write_digits(td_list, 0b11111111111111111111);
+    let cells = self.printer_rows.item(0).expect("can't get tr").children();
+    self.write_digits(cells, 0b11111111111111111111);
   }
 
   fn write_digits(&self, td_list: web_sys::HtmlCollection, bits: u32) {
@@ -106,28 +120,51 @@ impl Printer {
     }
   }
 
+  ///Returns false if not advancing paper.
+  ///Returns true if advancing paper.
+  pub fn new_advance_paper_signal(&mut self, ram0_data: u4) -> bool {
+    let advance_paper = ram0_data.value() & 0b1000 == 0b1000;
+    if !self.advance_paper && advance_paper { //We only signal on the switch from false to true.
+      self.advance_paper = true;
+      return true;
+    }
+    self.advance_paper = advance_paper;
+    false
+  }
+
+  ///Returns false if not hammering.
+  ///Returns true if hammering.
+  pub fn new_hammer_signal(&mut self, ram0_data: u4) -> bool {
+    let hammering = ram0_data.value() & 0b10 == 0b10;
+    if !self.hammering && hammering {
+      self.hammering = true;
+      return true;
+    }
+    self.hammering = hammering;
+    false
+  }
+
   fn move_up_paper(&mut self) {
-    let table = self.html_document.get_element_by_id("paper").unwrap();
-    let tbody = table.children().item(0).expect("can't get tbody");
-    let tbody_children = tbody.children();
     for i in 0..6 {
       copy_tr(
-        tbody_children.item(i).unwrap(),
-        tbody_children.item(i + 1).unwrap()
+        self.paper_rows.item(i).unwrap(),
+        self.paper_rows.item(i + 1).unwrap()
       );
     }
-    clear_tr(tbody_children.item(6).unwrap());
+    clear_tr(self.paper_rows.item(6).unwrap());
     self.red_color = false;
   }
 
   fn hit_hammer(&self, bits: u32) {
-    let table = self.html_document.get_element_by_id("paper").unwrap();
-    let tbody = table.children().item(0).expect("can't get tbody");
-    
-    let td_list = tbody.children().item(6).expect("can't get tr").children();  //Lowest paper line
-
-    self.write_digits(td_list, bits);
+    let cells = self.paper_rows.item(6).expect("can't get tr").children();  //Lowest paper line
+    self.write_digits(cells, bits);
   }
+}
+
+fn printer_shift_bits(shifters: &[shifter4003::Shifter]) -> u32 {
+  let shift1 = shifters[1].read_parallel() as u32;
+  let shift2 = shifters[2].read_parallel() as u32;
+  shift1 | (shift2 << 10)
 }
 
 fn copy_tr(tr_to: web_sys::Element, tr_from: web_sys::Element) {

@@ -1,13 +1,19 @@
 use arbitrary_int::u4;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::JsCast;
-use boards::busicom141pf::Board;
+use chips::mcs4;
 
 pub(super) struct Keyboard {
   current_scan_code: u8,
   pending_click_var: wasm_bindgen::JsValue,
   timer: u8,
-  html_document: web_sys::Document,
+  digits_element: web_sys::Element,
+  float_element: web_sys::Element,
+  round_element: web_sys::Element,
+  truncate_element: web_sys::Element,
+  memory_led: web_sys::Element,
+  overflow_led: web_sys::Element,
+  negative_led: web_sys::Element,
   digit_precision: u8,
   rounding: u8,
 }
@@ -26,15 +32,21 @@ impl Keyboard {
       current_scan_code: 0,
       pending_click_var,
       timer: 0,
-      html_document: document,
+      digits_element: document.get_element_by_id("digits").unwrap(),
+      float_element: document.get_element_by_id("float").unwrap(),
+      round_element: document.get_element_by_id("round").unwrap(),
+      truncate_element: document.get_element_by_id("truncate").unwrap(),
+      memory_led: document.get_element_by_id("memory_led").unwrap(),
+      overflow_led: document.get_element_by_id("overflow_led").unwrap(),
+      negative_led: document.get_element_by_id("negative_led").unwrap(),
       digit_precision: 8,
       rounding: 0,  //"Floating" mode.
     }
   }
   
   /// Set ROM bit depending on current shifter bit
-  pub(super) fn run_cycle(&mut self, board: &mut Board) {
-    let shifter = board.i4003s[0].read_parallel();
+  pub(super) fn run_cycle(&mut self, board: &mut mcs4::Board, shifters: &[mcs4::shifter4003::Shifter]) {
+    let shifter = shifters[0].read_parallel();
     let key_out = u4::new(match (shifter, self.current_scan_code) {
       (0b0000000001, 129) => 0b0001, //CM
       (0b0000000001, 130) => 0b0010, //RM
@@ -72,16 +84,16 @@ impl Keyboard {
       (0b1000000000, _) => self.rounding & 0xF,
       _ => 0,
     });
-    board.i4001s[1].write_ports(key_out);
+    board.roms[1].ports = key_out;
   }
   
-  pub(super) fn run_sleep_cycle(&mut self, board: &mut Board) {
+  pub(super) fn run_sleep_cycle(&mut self, board: &mut mcs4::Board) {
     self.handle_keypress(board);
     self.handle_switches();
     self.handle_leds(board);
   }
   
-  fn handle_keypress(&mut self, board: &mut Board) {
+  fn handle_keypress(&mut self, board: &mut mcs4::Board) {
     if self.timer > 0 {
       self.timer -= 1;
       return;
@@ -92,9 +104,9 @@ impl Keyboard {
         match self.current_scan_code {
           0 => (),
           1 => {  //Advance paper
-            let mut rom_ports = board.i4001s[2].read_ports();
+            let mut rom_ports = board.roms[2].ports;
             rom_ports |= u4::new(0b1000);  //Advance paper signal
-            board.i4001s[2].write_ports(rom_ports);
+            board.roms[2].ports = rom_ports;
             self.timer = 1;
           },
           _ => {  //actual scan code will be handled by fast run cycle due to it being dependent on shift register.
@@ -106,9 +118,9 @@ impl Keyboard {
       //Undo button press
       match self.current_scan_code {
         1 => {  //Advance paper
-          let mut rom_ports = board.i4001s[2].read_ports();
+          let mut rom_ports = board.roms[2].ports;
           rom_ports &= u4::new(0b0111);  //Advance paper signal
-          board.i4001s[2].write_ports(rom_ports);
+          board.roms[2].ports = rom_ports;
           self.timer = 7;
         },
         _ => {
@@ -130,40 +142,32 @@ impl Keyboard {
   }
   
   fn handle_switches(&mut self) {
-    let digits_element = self.html_document.get_element_by_id("digits").unwrap();
-    let digits: &web_sys::HtmlInputElement = digits_element.dyn_ref().unwrap();
+    let digits: &web_sys::HtmlInputElement = self.digits_element.dyn_ref().unwrap();
     self.digit_precision = digits.value().parse().unwrap();
     
-    let float_element = self.html_document.get_element_by_id("float").unwrap();
-    let float: &web_sys::HtmlInputElement = float_element.dyn_ref().unwrap();
+    let float: &web_sys::HtmlInputElement = self.float_element.dyn_ref().unwrap();
     if float.checked() {
       self.rounding = 0;
       return;
     }
-    let round_element = self.html_document.get_element_by_id("round").unwrap();
-    let round: &web_sys::HtmlInputElement = round_element.dyn_ref().unwrap();
+    let round: &web_sys::HtmlInputElement = self.round_element.dyn_ref().unwrap();
     if round.checked() {
       self.rounding = 1;
       return;
     }
-    let truncate_element = self.html_document.get_element_by_id("truncate").unwrap();
-    let truncate: &web_sys::HtmlInputElement = truncate_element.dyn_ref().unwrap();
+    let truncate: &web_sys::HtmlInputElement = self.truncate_element.dyn_ref().unwrap();
     if truncate.checked() {
       self.rounding = 8;
       return;
     }
   }
   
-  fn handle_leds(&mut self, board: &mut Board) {
-    let ram_ports = board.i4002s[1].read_ports().value();
+  fn handle_leds(&mut self, board: &mut mcs4::Board) {
+    let ram_ports = board.rams[1].ports.value();
 
-    self.update_led("memory_led", if ram_ports & 0b1 == 0b1 { "lightblue" } else { "none" });
-    self.update_led("overflow_led", if ram_ports & 0b10 == 0b10 { "#ffcccb" } else { "none" });
-    self.update_led("negative_led", if ram_ports & 0b100 == 0b100 { "lightgreen" } else { "none" });
+    let _ = self.memory_led.set_attribute("style", &format!("background-color: {}", if ram_ports & 0b1 == 0b1 { "lightblue" } else { "none" }));
+    let _ = self.overflow_led.set_attribute("style", &format!("background-color: {}", if ram_ports & 0b10 == 0b10 { "ffcccb" } else { "none" }));
+    let _ = self.negative_led.set_attribute("style", &format!("background-color: {}", if ram_ports & 0b100 == 0b100 { "lightgreen" } else { "none" }));
   }
 
-  fn update_led(&mut self, led_id: &str, color: &str) {
-    let led = self.html_document.get_element_by_id(led_id).unwrap();
-    let _ = led.set_attribute("style", &format!("background-color: {}", color));
-  }
 }
